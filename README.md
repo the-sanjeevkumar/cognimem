@@ -1,221 +1,361 @@
 ---
-
-#  CogniMem: Human-Inspired Cognitive Memory for AI Agents
+# CogniMem v2.0: Advanced Cognitive Memory for AI Agents
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Managed with uv](https://img.shields.io/badge/managed%20with-uv-4e4880)](https://github.com/astral-sh/uv)
-
-Stop giving your AI agents amnesia or infinite, noisy context windows. **CogniMem** is an open-source, biologically inspired memory architecture that allows AI agents to remember, forget, and learn just like humans do. 
-
-Unlike static RAG or simple sliding-window contexts, CogniMem implements a tripartite memory system governed by a background **Consolidation Engine**. It requires only **minor code changes** to integrate with almost any existing AI agent framework.
-
-##  Key Features
-
--  Tripartite Memory Architecture: Separates memory into *Working* (short-term cache), *Episodic* (vector-based experiences), and *Semantic* (graph-based distilled facts).
--  Ebbinghaus Forgetting Curve: Automatically decays the importance of unused memories over time and prunes irrelevant data, preventing context poisoning.
--  Hybrid Associative Retrieval: Combines vector similarity with cognitive importance scores and graph relationships for human-like, context-aware recall.
--  Framework Agnostic: Drop-in wrappers for LangChain, AutoGen, CrewAI, and a universal SDK for custom Python/Node.js agents.
--  `uv` Optimized: Lightning-fast dependency resolution and deterministic locking out of the box.
+[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)]()
 
 ---
 
-##  Installation
+Stop giving your AI agents amnesia or infinite, noisy context windows. **CogniMem** is an open-source, biologically inspired memory architecture that allows AI agents to remember, forget, and learn just like humans do.
 
-CogniMem is designed to work seamlessly with modern Python tooling. We highly recommend using [`uv`](https://github.com/astral-sh/uv) for blazing-fast setup.
+Unlike static RAG or simple sliding-window contexts, CogniMem implements a **hierarchical memory system** governed by background consolidation, compression, and proactive retrieval engines. It requires only **minor code changes** to integrate with almost any existing AI agent framework.
 
-### Option 1: Install from PyPI (Coming Soon)
-```bash
-uv pip install cognimem
+## 🚀 What's New in v2.0
+
+| Feature | v1.0 | v2.0 |
+|---------|------|------|
+| Memory Tiers | 3 (Working, Episodic, Semantic) | **4 (Immediate, Short-term, Long-term, Archival)** |
+| Retrieval | Hybrid vector + importance | **Query planning + decomposition + cross-session** |
+| Memory Management | Ebbinghaus decay | **Compression + summarization + auto-tiering** |
+| Proactivity | None | **Context-aware + temporal + pattern-based prefetch** |
+| Multi-Agent | Basic agent_id isolation | **Shared spaces + RBAC + conflict resolution** |
+| Sessions | None | **Full lifecycle + bridging + cross-session recall** |
+| Architecture | Sync, monolithic | **Async-first + pluggable backends + CLI** |
+
+---
+
+## ✨ Key Features
+
+### 🧠 Hierarchical Memory Tiers
 ```
+Immediate (Working) → Short-term (Episodic) → Long-term (Semantic) → Archival (Cold)
+     10 items              1,000 items           100,000 items         1,000,000 items
+     5 min TTL             7 day TTL             1 year TTL            10 year TTL
+```
+- Automatic promotion/demotion based on importance and age
+- Configurable capacity, TTL, and retrieval latency per tier
+- Background rebalancing prevents tier overflow
 
-### Option 2: Install from Source (Recommended for now)
+### 🗜️ LLM-Based Memory Compression
+- **Hierarchical summarization**: turn → session → day → week
+- Preserves entities, decisions, commitments automatically
+- Configurable compression levels (light/medium/aggressive)
+- Automatic compression of old memories
+
+### 🎯 Intelligent Query Planning
+- LLM-based query analysis and decomposition
+- Parallel sub-query execution with result fusion
+- Reciprocal Rank Fusion (RRF), weighted, and max strategies
+- Query rewriting for improved retrieval
+
+### ⚡ Proactive/Anticipatory Retrieval
+- **Context-aware**: Prefetches on goal/topic/entity changes
+- **Temporal**: Daily/weekly/monthly scheduled summaries
+- **Pattern-based**: Learns query co-occurrence patterns
+- Background prefetch with caching
+
+### 🤝 Multi-Agent Shared Memory
+- Shared memory spaces with namespaces (personal/team/org/public)
+- Role-based access control (read/write/admin)
+- Conflict resolution strategies (last-write-wins/merge/manual)
+- Full audit trail and version history
+
+### 📋 Session Management
+- Full session lifecycle (active → paused → ended → archived)
+- Automatic session summarization on end
+- Context bridging between related sessions
+- Cross-session retrieval with source attribution
+
+### 🔌 Pluggable Architecture
+- Abstract backends for vectors (ChromaDB, Pinecone, Weaviate)
+- Graph backends (NetworkX, Neo4j, Kuzu)
+- Embedding backends (SentenceTransformers, OpenAI, Cohere)
+- Storage backends (local, Redis, PostgreSQL, S3)
+
+---
+
+## 📦 Installation
+
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/cognimem.git
-cd cognimem
+# Using uv (recommended)
+uv pip install cognimem
 
-# 2. Install dependencies and the package in editable mode using uv
+# Or from source
+git clone https://github.com/your-org/cognimem.git
+cd cognimem
 uv pip install -e .
 ```
 
----
-
-##  Quick Start
-
-Here is how easy it is to give your agent a human-like memory.
-
-```python
-from cognimem.sdk import CogniMem
-
-# 1. Initialize the memory system with a unique agent ID
-agent_memory = CogniMem(agent_id="research_assistant_01")
-
-# 2. Remember an interaction (assign an importance score and tags)
-agent_memory.remember(
-    content="The user prefers Python over Java for backend development.",
-    importance=0.9,
-    tags=["user_preference", "python", "backend"]
-)
-
-agent_memory.remember(
-    content="We discussed deploying the app using Docker yesterday.",
-    importance=0.5,
-    tags=["project", "docker"]
-)
-
-# 3. Recall context before generating the next LLM response
-query = "What programming language does the user like?"
-context = agent_memory.recall(query, top_k=2)
-
-print("--- Retrieved Context ---")
-print(context)
-```
+Requires Python 3.10+.
 
 ---
 
-##  Agent Integrations
-
-CogniMem is built to require **minor changes** to your existing codebase. Choose your framework below:
-
-### 1. LangChain / LangGraph
-Replace your standard `ConversationBufferMemory` or `VectorStoreRetrieverMemory` with our drop-in wrapper.
+## 🚀 Quick Start
 
 ```python
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from cognimem.integrations.langchain_wrapper import CogniMemChatHistory
+from cognimem import create_cognimem
+from cognimem.core.hierarchical import MemoryTier
 
-# Initialize the memory backend
-memory = CogniMemChatHistory(agent_id="langchain_agent_01")
+async def main():
+    # Create and initialize
+    async with create_cognimem(agent_id="research_assistant") as mem:
+        
+        # Remember with automatic tier placement
+        await mem.remember(
+            content="The user prefers Python over Java for backend development.",
+            importance=0.9,
+            tags=["user_preference", "python", "backend"]
+        )
+        
+        await mem.remember(
+            content="We discussed deploying the app using Docker yesterday.",
+            importance=0.5,
+            tags=["project", "docker"]
+        )
+        
+        # Recall with intelligent query planning
+        results = await mem.recall(
+            query="What programming language does the user like?",
+            top_k=3,
+            use_query_planner=True
+        )
+        
+        # Tier-specific recall
+        results = await mem.recall(
+            query="deployment",
+            top_k=2,
+            tiers=[MemoryTier.LONG_TERM]
+        )
+        
+        # Start a session for conversation tracking
+        session_id = await mem.start_session(tags=["meeting", "planning"])
+        
+        # ... conversation happens ...
+        
+        # End session with automatic summarization
+        await mem.end_session()
+        
+        # Proactive memory - context-aware prefetch
+        await mem.on_context_change({
+            "current_goal": "Deploy the application",
+            "current_topic": "database selection"
+        })
 
-# Pass it to your agent
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
-# ... setup your tools and prompt ...
-agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True)
-
-# The agent will now automatically remember and recall using CogniMem!
-agent_executor.invoke({"input": "What did we talk about regarding Docker?"})
-```
-
-### 2. AutoGen
-Inject CogniMem into AutoGen using a custom tool or a reply hook to maintain state across conversations.
-
-```python
-import autogen
-from cognimem.sdk import CogniMem
-
-memory = CogniMem(agent_id="autogen_coder")
-
-def recall_memory_tool(query: str) -> str:
-    """Use this tool to remember past interactions with the user."""
-    return memory.recall(query, top_k=3)
-
-def remember_hook(sender, message, recipient, silent):
-    """Automatically remember significant messages."""
-    if "IMPORTANT:" in message:
-        memory.remember(message, importance=0.8, tags=["autogen_log"])
-    return message
-
-# Attach the hook to your agent
-coder = autogen.AssistantAgent(
-    name="coder",
-    llm_config={"config_list": [{"model": "gpt-4o"}]},
-)
-coder.register_reply([autogen.Agent, None], remember_hook)
-
-# Provide the recall tool to the agent
-tools = [{"type": "function", "function": {"name": "recall_memory_tool", "description": "...", "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}}}]
-coder.update_tool_signature(tools, is_remove=False)
-```
-
-### 3. CrewAI
-Use CogniMem as a custom tool for your CrewAI agents to give them long-term persistence across different tasks and runs.
-
-```python
-from crewai import Agent, Task, Crew
-from crewai_tools import tool
-from cognimem.sdk import CogniMem
-
-memory = CogniMem(agent_id="crewai_researcher")
-
-@tool("Recall Past Research")
-def recall_research(query: str) -> str:
-    """Searches long-term memory for past research findings."""
-    return memory.recall(query, top_k=3)
-
-researcher = Agent(
-    role='Senior Researcher',
-    goal='Uncover groundbreaking technologies',
-    backstory='You rely on your extensive, organized memory of past projects.',
-    tools=[recall_research],
-    verbose=True
-)
-
-# ... define tasks and crew as usual ...
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
 ```
 
 ---
 
-##  Configuration
+## 🖥️ Command Line Interface
 
-CogniMem is highly tunable via the `config.yaml` file. You can adjust how "human" the forgetting and learning process is:
+```bash
+# Remember a memory
+cognimem remember "User prefers Python" --importance 0.9 --tags python preference
+
+# Recall memories
+cognimem recall "What does the user like?" --top-k 5
+
+# Show statistics
+cognimem stats
+
+# Tier statistics
+cognimem tiers
+
+# Compress old memories
+cognimem compress --max-age-days 30 --level aggressive
+
+# Session management
+cognimem session start --tags meeting
+cognimem session list --status active
+cognimem session end
+
+# Shared memory
+cognimem shared create "Project Team" --namespace team
+cognimem shared remember <space_id> "Team decision: Use Redis"
+cognimem shared recall <space_id> "caching decision"
+
+# Proactive triggers
+cognimem proactive context current_goal "Deploy application"
+cognimem proactive entity "PostgreSQL"
+cognimem proactive decision "Which database to use?"
+```
+
+---
+
+## ⚙️ Configuration
+
+CogniMem uses `config.yaml` with environment variable overrides (`COGNIMEM_` prefix):
 
 ```yaml
+agent:
+  default_id: "my_agent"
+
 memory:
-  working_memory_limit: 10       # Max items in immediate short-term cache
-  consolidation_interval_hours: 6 # How often the "sleep cycle" runs
-  decay_constant_k: 24           # Ebbinghaus curve: Higher = slower forgetting
-  promotion_threshold: 0.7       # Score required to move Episodic -> Semantic (Fact)
-  pruning_threshold: 0.1         # Score below which memory is permanently forgotten
+  working_memory_limit: 10
+  consolidation_interval_hours: 6
+  decay_constant_k: 24
+  promotion_threshold: 0.7
+  pruning_threshold: 0.1
+
+embedding:
+  model: "all-MiniLM-L6-v2"
+
 retrieval:
-  vector_weight: 0.6             # Weight of semantic/vector similarity in recall
-  importance_weight: 0.4         # Weight of memory importance/recency in recall
+  vector_weight: 0.6
+  importance_weight: 0.3
+  recency_weight: 0.1
+  top_k: 5
+
+compression:
+  enabled: true
+  llm_model: "gpt-4o-mini"
+  max_tokens_per_summary: 500
+
+query_planner:
+  enabled: true
+  llm_model: "gpt-4o-mini"
+  max_sub_queries: 5
+
+multi_agent:
+  enabled: false
+  namespace_prefix: "team_"
+```
+
+Environment variables override nested config with `__` delimiter:
+```bash
+export COGNIMEM_EMBEDDING__MODEL="text-embedding-3-small"
+export COGNIMEM_RETRIEVAL__TOP_K=10
 ```
 
 ---
 
-## How It Works (Under the Hood)
+## 🏗️ Architecture
 
-```mermaid
-graph TD
-    A[Agent Interaction] -->|High Importance| B(Working Memory)
-    B -->|Persist| C[(Episodic Memory<br/>Vector DB)]
-    
-    C -->|Background 'Sleep' Cycle| D{Consolidation Engine}
-    D -->|Score < 0.1| E[( Forgotten/Pruned)]
-    D -->|Score > 0.7| F[(Semantic Memory<br/>Knowledge Graph)]
-    
-    G[Agent Query] --> H[Hybrid Retriever]
-    C -.->|Vector Similarity| H
-    F -.->|Graph Traversal| H
-    H -->|Fused Score| I[Context to LLM]
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CogniMem SDK                           │
+├─────────────────────────────────────────────────────────────┤
+│  HierarchicalMemory  │  Compression  │  QueryPlanner        │
+│  ProactiveMemory     │  MultiAgent   │  SessionManager      │
+├─────────────────────────────────────────────────────────────┤
+│                    Abstract Backends                        │
+│  MemoryBackend  │  VectorBackend  │  GraphBackend          │
+│  EmbeddingBackend                                                          │
+├─────────────────────────────────────────────────────────────┤
+│  Local (ChromaDB + NetworkX + SentenceTransformers)         │
+│  Remote (Pinecone/Weaviate + Neo4j/Kuzu + OpenAI/Cohere)   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-1. **Ingestion**: New information enters Working Memory, then persists to Episodic Memory (ChromaDB) with an `importance_score`.
-2. **Consolidation**: A background scheduler periodically applies the *Ebbinghaus Forgetting Curve*. Trivial memories decay and are deleted. Crucial memories are distilled and promoted to the Semantic Graph (NetworkX).
-3. **Retrieval**: When the agent queries memory, the `HybridRetriever` fuses vector similarity (what the text says) with cognitive importance (how relevant it is to the agent's goals), returning the most "human-like" associative match.
+---
+
+## 🔧 Advanced Usage
+
+### Custom Backend
+```python
+from cognimem.backends.base import MemoryBackend, VectorBackend
+
+class MyVectorBackend(VectorBackend):
+    async def initialize(self): ...
+    async def add_vectors(self, ids, embeddings, metadatas): ...
+    async def search_vectors(self, query_embedding, top_k, filters): ...
+
+# Use with CogniMem
+from cognimem.backends.local import LocalMemoryBackend
+# Or plug in your custom backend
+```
+
+### Multi-Agent Team Memory
+```python
+# Create team space
+space = await mem.create_shared_space("Engineering Team", namespace="team")
+
+# Add members with permissions
+await mem.multiagent.add_member(space['space_id'], "agent_alice", PermissionLevel.WRITE, "agent_bob")
+
+# Shared remember/recall
+await mem.remember_shared(space['space_id'], "Decision: Use PostgreSQL", importance=0.9)
+results = await mem.recall_shared(space['space_id'], "database decision")
+```
+
+### Cross-Session Continuity
+```python
+# Session 1
+session1 = await mem.start_session()
+await mem.remember("User wants dark mode", session_id=session1)
+await mem.end_session()
+
+# Session 2 (next day)
+session2 = await mem.start_session(parent_session_id=session1)
+# Automatically gets context from session1 via bridging
+results = await mem.recall("UI preferences")  # Includes session1 memories
+```
 
 ---
 
-##  Contributing
+## 📊 Monitoring & Debugging
 
-We welcome contributions! Whether it's adding support for a new agent framework (e.g., LlamaIndex, Microsoft Autogen Studio), improving the graph distillation logic, or fixing bugs, please feel free to open an Issue or submit a Pull Request.
+```python
+# Full statistics
+stats = await mem.get_stats()
+# {
+#   "base": {"total_memories": 1500, "avg_importance": 0.65, ...},
+#   "tiers": {"immediate": {"count": 5, "utilization": 0.5}, ...},
+#   "sessions": {"total_sessions": 12, "active": 1, ...}
+# }
 
-1. Fork the repository.
-2. Create your feature branch (`uv run -m venv .venv` and `uv pip install -e ".[dev]"`).
-3. Commit your changes (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature/new-integration`).
-5. Open a Pull Request.
+# Tier-specific stats
+tier_stats = await mem.get_tier_stats()
+```
+
+CLI also provides rich formatted output:
+```bash
+cognimem stats
+cognimem tiers
+cognimem session list
+```
 
 ---
 
-##  License
+## 🧪 Testing
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details. Feel free to use it in commercial and open-source agentic AI projects.
+```bash
+# Run tests
+pytest tests/ -v
+
+# With coverage
+pytest tests/ --cov=cognimem --cov-report=html
+```
 
 ---
 
-### Pro Tip for Developers:
-If you are building a multi-agent system, simply instantiate `CogniMem(agent_id="shared_team_memory")` for all agents to give them a **collective hive-mind**, or use unique IDs (`agent_id="agent_a"`) to give them distinct, personalized personalities and experiences!
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a Pull Request
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Inspired by human memory research (Ebbinghaus, Atkinson-Shiffrin, Baddeley-Hitch)
+- Built on ChromaDB, NetworkX, SentenceTransformers, and Pydantic
+- Query planning inspired by LangChain and LlamaIndex architectures
+
+---
+
+**CogniMem v2.0** - Give your agents the memory they deserve. 🧠
