@@ -8,12 +8,13 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, Set
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from collections import defaultdict
 
 from pydantic import BaseModel, Field
 
+from cognimem.time_utils import utcnow
 from cognimem.config import get_settings
 from cognimem.backends.base import MemoryBackend, MemoryRecord, MemoryQuery, SearchResult
 
@@ -49,7 +50,7 @@ class AccessControlEntry:
     principal_type: str  # "agent" or "team"
     permission: PermissionLevel
     granted_by: str
-    granted_at: datetime = field(default_factory=datetime.utcnow)
+    granted_at: datetime = field(default_factory=utcnow)
     expires_at: Optional[datetime] = None
 
 
@@ -61,7 +62,7 @@ class SharedMemorySpace:
     namespace: MemoryNamespace
     owner_id: str
     members: Dict[str, PermissionLevel] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=utcnow)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -350,7 +351,7 @@ class MultiAgentMemoryManager:
                 content=content,
                 metadata=metadata,
                 author_id=agent_id,
-                timestamp=datetime.utcnow(),
+                timestamp=utcnow(),
                 change_summary="Initial creation"
             ))
             
@@ -417,7 +418,7 @@ class MultiAgentMemoryManager:
                 content=new_content,
                 metadata=current.metadata,
                 author_id=agent_id,
-                timestamp=datetime.utcnow(),
+                timestamp=utcnow(),
                 parent_version=new_version - 1,
                 change_summary=change_summary
             ))
@@ -426,7 +427,7 @@ class MultiAgentMemoryManager:
             current.content = new_content
             current.version = new_version
             current.metadata["last_modified_by"] = agent_id
-            current.metadata["last_modified_at"] = datetime.utcnow().isoformat()
+            current.metadata["last_modified_at"] = utcnow().isoformat()
             
             await self.backend.update(current)
             return True

@@ -7,12 +7,13 @@ import asyncio
 import json
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, AsyncIterator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from cognimem.time_utils import utcnow
 from cognimem.config import get_settings
 from cognimem.backends.base import MemoryBackend, MemoryRecord
 
@@ -213,7 +214,7 @@ class HierarchicalSummarizer:
         
         for mem in memories:
             # Assign to appropriate levels based on age
-            age = datetime.utcnow() - mem.timestamp
+            age = utcnow() - (mem.timestamp.replace(tzinfo=timezone.utc) if mem.timestamp.tzinfo is None else mem.timestamp)
             if age < timedelta(hours=1):
                 by_level["turn"].append(mem)
             elif age < timedelta(days=1):
@@ -322,11 +323,11 @@ class MemoryCompressor:
         level: CompressionLevel = CompressionLevel.AGGRESSIVE
     ) -> int:
         """Automatically compress memories older than threshold."""
-        cutoff = datetime.utcnow() - timedelta(days=age_threshold_days)
+        cutoff = utcnow() - timedelta(days=age_threshold_days)
         
         # Get old memories
         memories = await self.backend.get_recent(agent_id, limit=10000)
-        old_memories = [m for m in memories if m.timestamp < cutoff and not m.compressed]
+        old_memories = [m for m in memories if (m.timestamp.replace(tzinfo=timezone.utc) if m.timestamp.tzinfo is None else m.timestamp) < cutoff and not m.compressed]
         
         if not old_memories:
             return 0
