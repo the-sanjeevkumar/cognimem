@@ -7,12 +7,13 @@ import asyncio
 import uuid
 from typing import List, Optional, Dict, Any, AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import defaultdict
 
 from pydantic import BaseModel, Field
 
+from cognimem.time_utils import utcnow
 from cognimem.config import get_settings
 from cognimem.backends.base import MemoryBackend, MemoryRecord, MemoryQuery, SearchResult
 from cognimem.core.compression import MemoryCompressor, create_memory_compressor
@@ -26,14 +27,19 @@ class SessionStatus(str, Enum):
     ARCHIVED = "archived"
 
 
+def _as_utc(dt: datetime) -> datetime:
+    """Treat naive timestamps as UTC so comparisons never raise TypeError."""
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+
 @dataclass
 class Session:
     """A conversation/memory session."""
     session_id: str
     agent_id: str
     status: SessionStatus = SessionStatus.ACTIVE
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=utcnow)
+    updated_at: datetime = field(default_factory=utcnow)
     ended_at: Optional[datetime] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     memory_count: int = 0
@@ -50,7 +56,7 @@ class SessionBridge:
     from_session_id: str
     to_session_id: str
     bridge_type: str  # "continuation", "reference", "context_transfer"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=utcnow)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -137,8 +143,8 @@ class SessionManager:
             return False
         
         session.status = SessionStatus.ENDED
-        session.ended_at = datetime.utcnow()
-        session.updated_at = datetime.utcnow()
+        session.ended_at = utcnow()
+        session.updated_at = utcnow()
         
         if create_summary and self.auto_summarize_on_end:
             await self._create_session_summary(session)
@@ -152,7 +158,7 @@ class SessionManager:
             return False
         
         session.status = SessionStatus.PAUSED
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utcnow()
         return True
     
     async def resume_session(self, session_id: str) -> bool:
@@ -162,7 +168,7 @@ class SessionManager:
             return False
         
         session.status = SessionStatus.ACTIVE
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utcnow()
         return True
     
     async def archive_session(self, session_id: str) -> bool:
@@ -172,7 +178,7 @@ class SessionManager:
             return False
         
         session.status = SessionStatus.ARCHIVED
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utcnow()
         return True
     
     async def _create_session_summary(self, session: Session) -> None:
@@ -186,7 +192,7 @@ class SessionManager:
         # Filter to session time range
         session_memories = [
             m for m in memories
-            if session.created_at <= m.timestamp <= (session.ended_at or datetime.utcnow())
+            if session.created_at <= m.timestamp <= (session.ended_at or utcnow())
         ]
         
         if not session_memories:
@@ -225,7 +231,7 @@ class SessionManager:
         )
         
         # Filter by session time range
-        end_time = session.ended_at or datetime.utcnow()
+        end_time = session.ended_at or utcnow()
         session_memories = [
             m for m in memories
             if session.created_at <= m.timestamp <= end_time
@@ -315,7 +321,7 @@ class SessionManager:
         archive: bool = True
     ) -> int:
         """Clean up old inactive sessions."""
-        cutoff = datetime.utcnow() - timedelta(days=max_age_days)
+        cutoff = utcnow() - timedelta(days=max_age_days)
         cleaned = 0
         
         for session_id in self.agent_sessions.get(agent_id, []):

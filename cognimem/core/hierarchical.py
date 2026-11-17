@@ -6,14 +6,14 @@ Implements multi-tier memory architecture with automatic promotion/demotion.
 import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 import heapq
 
+from cognimem.time_utils import utcnow
 from cognimem.config import get_settings
 from cognimem.backends.base import MemoryBackend, MemoryRecord, MemoryQuery, SearchResult
-from cognimem.backends.local import LocalMemoryBackend
 
 
 class MemoryTier(str, Enum):
@@ -72,6 +72,11 @@ DEFAULT_TIER_CONFIGS = {
         compression_enabled=True,
     ),
 }
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """Treat naive timestamps as UTC so comparisons never raise TypeError."""
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
 
 
 class TierManager:
@@ -139,7 +144,7 @@ class TierManager:
     async def auto_tier_memory(self, record: MemoryRecord) -> MemoryTier:
         """Determine the appropriate tier for a memory based on importance and age."""
         importance = record.importance_score
-        age_hours = (datetime.utcnow() - record.timestamp).total_seconds() / 3600
+        age_hours = (utcnow() - _as_utc(record.timestamp)).total_seconds() / 3600
         
         # High importance memories go to long-term
         if importance >= self.tier_configs[MemoryTier.LONG_TERM].min_importance:
@@ -208,7 +213,7 @@ class TierManager:
         
         for tier in MemoryTier:
             config = self.tier_configs[tier]
-            cutoff = datetime.utcnow() - timedelta(seconds=config.ttl_seconds)
+            cutoff = utcnow() - timedelta(seconds=config.ttl_seconds)
             
             # Get memories in this tier
             memories = await self.backend.get_recent(
@@ -218,7 +223,7 @@ class TierManager:
             )
             
             for memory in memories:
-                if memory.timestamp < cutoff and memory.importance_score < config.min_importance:
+                if _as_utc(memory.timestamp) < cutoff and memory.importance_score < config.min_importance:
                     await self.backend.delete(memory.id)
                     total_removed += 1
         

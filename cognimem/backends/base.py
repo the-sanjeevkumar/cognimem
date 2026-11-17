@@ -4,8 +4,8 @@ Defines the contract for pluggable memory storage backends.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any, AsyncIterator
-from datetime import datetime
+from typing import List, Optional, Dict, Any, AsyncIterator, Tuple
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 import uuid
 
@@ -17,7 +17,7 @@ class MemoryRecord(BaseModel):
     content: str
     memory_type: str  # "working", "episodic", "semantic", "archival"
     tier: str = "episodic"  # "immediate", "short_term", "long_term", "archival"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     importance_score: float = 1.0
     tags: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -36,7 +36,7 @@ class MemoryQuery(BaseModel):
     filters: Dict[str, Any] = Field(default_factory=dict)
     memory_types: Optional[List[str]] = None
     tiers: Optional[List[str]] = None
-    time_range: Optional[tuple[datetime, datetime]] = None
+    time_range: Optional[Tuple[datetime, datetime]] = None
     min_importance: float = 0.0
     include_embeddings: bool = False
 

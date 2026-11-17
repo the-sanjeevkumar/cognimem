@@ -7,12 +7,13 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, Callable, Set
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import defaultdict
 
 from pydantic import BaseModel, Field
 
+from cognimem.time_utils import utcnow
 from cognimem.config import get_settings
 from cognimem.backends.base import MemoryBackend, MemoryRecord, MemoryQuery, SearchResult
 from cognimem.core.query_planner import QueryPlanner, create_query_planner
@@ -37,7 +38,7 @@ class ProactiveTrigger:
     context: Dict[str, Any]
     priority: int = 1
     metadata: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=utcnow)
 
 
 @dataclass
@@ -309,7 +310,7 @@ class ProactiveMemoryManager:
         max_results: int = 5
     ) -> PrefetchResult:
         """Execute prefetch for a trigger."""
-        start_time = datetime.utcnow()
+        start_time = utcnow()
         
         # Check cache first
         cache_key = f"{trigger.agent_id}:{trigger.trigger_type.value}:{hash(str(trigger.context))}"
@@ -380,7 +381,7 @@ class ProactiveMemoryManager:
         # Cache final results
         self._prefetch_cache[cache_key] = final_results
         
-        execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+        execution_time = (utcnow() - start_time).total_seconds() * 1000
         
         result = PrefetchResult(
             trigger=trigger,

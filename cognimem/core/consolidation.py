@@ -1,5 +1,5 @@
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from cognimem.core.episodic_memory import EpisodicMemory
 from cognimem.core.semantic_memory import SemanticMemory
@@ -26,7 +26,7 @@ class ConsolidationEngine:
 
     def consolidate_memories(self):
         memories = self.episodic.get_all()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         for mem in memories:
             hours_passed = (now - mem.timestamp).total_seconds() / 3600
